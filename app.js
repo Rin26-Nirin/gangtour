@@ -247,7 +247,7 @@ function calculateMasterBalances() {
 
     if (globalMembers.length === 0 || globalExpenses.length === 0) {
         settlementListDiv.innerHTML = '<p class="opacity-60 italic text-xs py-2 text-center">ยังไม่มีรายการค้างจ่าย</p>';
-        netSummaryCardsDiv.innerHTML = '<p class="col-span-full text-center text-emerald-800 font-medium py-4">🎉 ยอดเงินลงตัวทุกคน เจ๊ากันหมดแล้ว!</p>';
+        netSummaryCardsDiv.innerHTML = '<p class="col-span-full text-center text-slate-400 italic py-4">กรุณาเพิ่มเพื่อนและบันทึกบิลเพื่อดูสรุปยอดโอนจ้า</p>';
         return;
     }
 
@@ -326,8 +326,13 @@ function calculateMasterBalances() {
         }
     }
 
+    /* 🎨 วาดการ์ดสรุปรายบุคคล (เวอร์ชันหักห้ามใจ ไม่เนียนขึ้นจุดพลุตอนเริ่มทริปแล้ว) */
     if (!hasAnyTransactions) {
-        netSummaryCardsDiv.innerHTML = '<p class="col-span-full text-center text-emerald-800 font-medium py-4">🎉 ยอดเงินลงตัวทุกคน เจ๊ากันหมดแล้ว!</p>';
+        if (globalMembers.length === 0 || globalExpenses.length === 0) {
+            netSummaryCardsDiv.innerHTML = '<p class="col-span-full text-center text-slate-400 italic py-4">กรุณาเพิ่มเพื่อนและบันทึกบิลเพื่อดูสรุปยอดโอนจ้า</p>';
+        } else {
+            netSummaryCardsDiv.innerHTML = '<p class="col-span-full text-center text-emerald-800 font-medium py-4">🎉 ยอดเงินลงตัวทุกคน เจ๊ากันหมดแล้ว!</p>';
+        }
     } else {
         globalMembers.forEach(name => {
             const debts = individualSettlements[name];
