@@ -1,0 +1,10 @@
+/* 🌿 ไฟล์เก็บสไตล์ความมินิมอล มัทฉะ และฟอนต์ไทยสารบัญ */
+body {
+    font-family: 'Sarabun', sans-serif;
+    font-size: 15px;
+    font-weight: 400;
+}
+
+h1, h2, h3 {
+    font-weight: 500;
+}
