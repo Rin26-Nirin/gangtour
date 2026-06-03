@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc, getDocs, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCd__eI5v4lxnVZ3y21zBhnR4z3v7jYb1M",
@@ -15,12 +15,12 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 // 🔍 --- ระบบอ่านรหัสทริปจาก URL (Trip ID) ---
-// ถ้าเปิดลิงก์ธรรมดาจะตั้งชื่อทริปว่า 'default' แต่ถ้าใส่ ?trip=rinchill จะดึงชื่อ 'rinchill' มาใช้ทันทีจ้า
 const urlParams = new URLSearchParams(window.location.search);
 const tripId = urlParams.get('trip') || 'default';
 
 let globalMembers = [];
 let globalExpenses = [];
+let globalSettled = {}; // 🗂️ เก็บสถานะว่าใครจ่ายใครแล้วบ้าง
 
 const memberNameInput = document.getElementById('member-name');
 const btnAddMember = document.getElementById('btn-add-member');
@@ -40,7 +40,7 @@ const netSummaryCardsDiv = document.getElementById('net-summary-cards');
 const btnMasterReset = document.getElementById('btn-master-reset');
 const btnMasterResetMobile = document.getElementById('btn-master-reset-mobile');
 
-// แสดงชื่อทริปปัจจุบันบนหัวเว็บให้รู้ว่าอยู่ห้องไหน
+// แสดงชื่อทริปปัจจุบันบนหัวเว็บ
 const headerSub = document.querySelector('p.text-slate-500');
 if (headerSub) {
     headerSub.innerHTML = `📍 รหัสทริปปัจจุบัน: <span class="bg-[#375534] text-white px-2 py-0.5 rounded font-medium text-[10px]">${tripId}</span>`;
@@ -50,9 +50,10 @@ function getAvatarUrl(name) {
     return `https://api.dicebear.com/7.x/bottts-neutral/svg?seed=${encodeURIComponent(name)}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
 }
 
-// 🌐 เปลี่ยนตำแหน่งอ้างอิงบน Firebase ให้จมลึกลงไปตามรหัสทริปดั่งไอเดียวิธีที่ 1
+// 🌐 อ้างอิงฐานข้อมูล
 const membersRef = collection(db, "trips", tripId, "members");
 const expensesRef = collection(db, "trips", tripId, "expenses");
+const settledRef = collection(db, "trips", tripId, "settled"); // 🗂️ ห้องเก็บข้อมูลการติ๊กจ่ายเงิน
 
 onSnapshot(membersRef, (snapshot) => {
     globalMembers = [];
@@ -70,6 +71,21 @@ onSnapshot(qExp, (snapshot) => {
     renderExpenseUI();
     calculateMasterBalances(); 
 });
+
+// 👁️ คอยฟังเสียงการติ๊กจ่ายเงินแบบเรียลไทม์
+onSnapshot(settledRef, (snapshot) => {
+    globalSettled = {};
+    snapshot.forEach(docSnap => {
+        globalSettled[docSnap.id] = docSnap.data().isPaid;
+    });
+    calculateMasterBalances(); 
+});
+
+// 🔘 ฟังก์ชันสำหรับกดปุ่มติ๊กถูกจ่ายเงิน
+window.togglePaidStatus = async (from, to, currentStatus) => {
+    const docId = `${from}_${to}`;
+    await setDoc(doc(db, "trips", tripId, "settled", docId), { isPaid: !currentStatus });
+};
 
 splitTypeSelect.addEventListener('change', () => {
     renderMemberUI();
@@ -248,6 +264,9 @@ const masterResetFunction = async () => {
         await Promise.all(expSnap.docs.map(d => deleteDoc(doc(db, "trips", tripId, "expenses", d.id))));
         const memSnap = await getDocs(membersRef);
         await Promise.all(memSnap.docs.map(d => deleteDoc(doc(db, "trips", tripId, "members", d.id))));
+        // 🧹 เคลียร์ประวัติการติ๊กจ่ายเงินด้วย
+        const settledSnap = await getDocs(settledRef);
+        await Promise.all(settledSnap.docs.map(d => deleteDoc(doc(db, "trips", tripId, "settled", d.id))));
         alert('✨ เคลียร์คลาวด์เรียบร้อยแล้วริน!');
         window.location.reload();
     }
@@ -365,19 +384,42 @@ function calculateMasterBalances() {
                 card.className = "p-3 bg-white rounded-lg border border-[#AEC3B0]/40 shadow-2xs flex gap-3 items-start";
                 let cardHtml = `
                     <img src="${getAvatarUrl(name)}" class="w-8 h-8 rounded-full bg-white border border-slate-200 mt-0.5" />
-                    <div class="flex-1">
+                    <div class="flex-1 w-full">
                         <p class="font-medium text-rose-700 mb-1.5">👤 ${name} <span class="text-[10px] text-slate-400 font-normal">(ต้องโอนออก)</span></p>
-                        <ul class="space-y-1">`;
+                        <ul class="space-y-1 w-full">`;
                 
                 debts.forEach(d => {
-                    cardHtml += `
-                        <li class="flex justify-between items-center bg-slate-50 p-1 rounded border border-slate-100">
-                            <span class="flex items-center gap-1">
-                                <img src="${getAvatarUrl(d.to)}" class="w-3.5 h-3.5 rounded-full bg-white" />
-                                <span>โอนให้ <span class="font-medium text-[#0F2A1D]">${d.to}</span></span>
-                            </span>
-                            <span class="font-bold text-[#375534] bg-[#E3EED4]/50 px-1.5 py-0.5 rounded text-[11px]">${d.amount.toLocaleString()} ฿</span>
-                        </li>`;
+                    // 🔘 ตรวจสอบสถานะว่าจ่ายหรือยังจากฐานข้อมูล
+                    const debtId = `${name}_${d.to}`;
+                    const isPaid = globalSettled[debtId] === true;
+
+                    if (isPaid) {
+                        // 🟢 สถานะ: จ่ายแล้ว (สีเขียว ขีดฆ่าตัวเลข)
+                        cardHtml += `
+                            <li class="flex justify-between items-center bg-emerald-50/70 p-1.5 rounded border border-emerald-200 opacity-80">
+                                <span class="flex items-center gap-1">
+                                    <img src="${getAvatarUrl(d.to)}" class="w-3.5 h-3.5 rounded-full bg-white opacity-70" />
+                                    <span class="text-emerald-700">โอนให้ <span class="font-medium">${d.to}</span></span>
+                                </span>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="font-bold text-emerald-600 line-through decoration-emerald-500 text-[11px]">${d.amount.toLocaleString()} ฿</span>
+                                    <button onclick="window.togglePaidStatus('${name}', '${d.to}', true)" class="bg-emerald-500 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] shadow-sm hover:bg-emerald-600 cursor-pointer">✔️</button>
+                                </div>
+                            </li>`;
+                    } else {
+                        // 🔴 สถานะ: ยังไม่จ่าย (ปกติ)
+                        cardHtml += `
+                            <li class="flex justify-between items-center bg-slate-50 p-1.5 rounded border border-slate-100">
+                                <span class="flex items-center gap-1">
+                                    <img src="${getAvatarUrl(d.to)}" class="w-3.5 h-3.5 rounded-full bg-white" />
+                                    <span>โอนให้ <span class="font-medium text-[#0F2A1D]">${d.to}</span></span>
+                                </span>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="font-bold text-[#375534] bg-[#E3EED4]/50 px-1.5 py-0.5 rounded text-[11px]">${d.amount.toLocaleString()} ฿</span>
+                                    <button onclick="window.togglePaidStatus('${name}', '${d.to}', false)" class="bg-slate-200 text-slate-400 w-5 h-5 rounded-full flex items-center justify-center text-[10px] hover:bg-emerald-400 hover:text-white transition cursor-pointer">✔️</button>
+                                </div>
+                            </li>`;
+                    }
                 });
                 
                 cardHtml += `</ul></div>`;
