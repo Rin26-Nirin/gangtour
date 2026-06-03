@@ -4,22 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>แอปหารเงินแก๊งทัวร์ - มัทฉะแดชบอร์ด 🌿</title>
-    <!-- ใช้ Tailwind CSS -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <!-- นำเข้าฟอนต์ TH Sarabun -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500&display=swap" rel="stylesheet">
     
-    <!-- 🔗 จุดเชื่อมโยงไฟล์สไตล์แยกส่วน -->
     <link rel="stylesheet" href="style.css">
 
-    <!-- 🐱 รูปไอคอนน้องแมวส้มมัทฉะแก้ทางหน่วยความจำค้าง (?v=2) -->
     <link rel="apple-touch-icon" href="https://i.ibb.co/689NfR5X/image.png?v=2">
 </head>
 <body class="bg-[#E3EED4] min-h-screen text-[#0F2A1D] flex">
 
-    <!-- 🧭 แถบเมนูด้านซ้าย (Sidebar - จะโชว์เฉพาะในคอมพิวเตอร์จอใหญ่) -->
     <div class="w-64 bg-white min-h-screen p-5 flex flex-col justify-between border-r border-[#AEC3B0]/30 hidden md:flex">
         <div class="space-y-6">
             <div class="flex items-center gap-2 pb-4 border-b border-[#AEC3B0]/20">
@@ -33,40 +28,34 @@
         </button>
     </div>
 
-    <!-- 💻 พื้นหลังเนื้อหาหลักด้านขวา (ใช้งานได้ดีทั้งในคอมและบนมือถือ iPhone) -->
     <div class="flex-1 p-4 md:p-8 space-y-5 max-w-5xl overflow-y-auto">
         
-        <!-- ส่วนหัวแอป (Header) -->
         <div class="flex justify-between items-center bg-white p-4 rounded-xl border border-[#AEC3B0]/20 shadow-2xs">
             <div>
                 <h1 class="text-base font-medium text-[#0F2A1D]">แก๊งทัวร์ Split & Share v5.6</h1>
                 <p class="text-[11px] text-slate-500">ยินดีต้อนรับกลับมาเคลียร์บิลทริปกันน้า 🌿</p>
             </div>
-            <!-- ปุ่มรีเซ็ตสำหรับหน้าจอมือถือ -->
             <button id="btn-master-reset-mobile" class="bg-rose-700 text-white text-xs px-2.5 py-1.5 rounded-lg font-medium cursor-pointer hover:bg-rose-800 transition">🚨 รีเซ็ตทริป</button>
         </div>
 
-        <!-- 👥 จุดแก้ไขสำคัญ: ย้ายกล่องเพิ่มเพื่อนและรายชื่อสมาชิกมาไว้ตรงกลางด้านบนสุด เพื่อให้เห็นเด่นชัดบนมือถือ -->
         <div class="bg-white rounded-xl p-4 border border-[#AEC3B0]/20 space-y-3 shadow-2xs">
             <h2 class="text-xs font-medium text-[#375534] border-b border-[#AEC3B0]/10 pb-1 flex items-center gap-1">👥 จัดการรายชื่อสมาชิกในทริป</h2>
             <div class="flex gap-2">
-                <input type="text" id="member-name" placeholder="พิมพ์ชื่อเพื่อนเพื่อเพิ่มเข้าทริป..." class="flex-1 p-2 text-xs border border-[#AEC3B0] rounded-md bg-[#E3EED4]/10 focus:outline-none focus:ring-1 focus:ring-[#375534]">
+                <input type="text" id="member-name" placeholder="พิมพ์ชื่อเพื่อนเพื่อเพิ่มเข้าทริป..." class="flex-1 p-2 text-base border border-[#AEC3B0] rounded-md bg-[#E3EED4]/10 focus:outline-none focus:ring-1 focus:ring-[#375534]">
                 <button id="btn-add-member" class="bg-[#375534] text-white text-xs px-4 py-2 rounded-md hover:bg-[#0F2A1D] transition font-medium">เพิ่มเพื่อน</button>
             </div>
-            <!-- แสดงรายชื่อเพื่อนพร้อมรูปอวตารน่ารักๆ แนวนอน -->
             <div id="member-badges" class="flex flex-wrap gap-2 pt-1">
                 <span class="text-slate-400 text-xs italic">กำลังโหลดรายชื่อเพื่อนในกลุ่ม...</span>
             </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-            <!-- บล็อกที่ 1: ฟอร์มบันทึกค่าใช้จ่ายใหม่ -->
             <div class="bg-white rounded-xl p-4 border border-[#AEC3B0]/20 space-y-3 lg:col-span-1 shadow-2xs">
                 <h2 class="text-xs font-medium text-[#375534] border-b border-[#AEC3B0]/10 pb-1">💰 บันทึกค่าใช้จ่ายใหม่</h2>
                 <div class="space-y-3 text-xs">
                     <div>
                         <label class="block text-slate-500 mb-1">จ่ายค่าอะไร?</label>
-                        <input type="text" id="expense-title" placeholder="เช่น ค่าน้ำมัน, ค่าข้าวเย็น" class="w-full p-2 border border-[#AEC3B0] rounded-md bg-[#E3EED4]/10 focus:outline-none">
+                        <input type="text" id="expense-title" placeholder="เช่น ค่าน้ำมัน, ค่าข้าวเย็น" class="w-full p-2 text-base border border-[#AEC3B0] rounded-md bg-[#E3EED4]/10 focus:outline-none">
                     </div>
                     <div>
                         <label class="block text-slate-500 mb-1">📐 รูปแบบการหารเงิน</label>
@@ -77,7 +66,7 @@
                     </div>
                     <div>
                         <label class="block text-slate-500 mb-1" id="amount-label">💰 จำนวนเงินรวม (บาท)</label>
-                        <input type="number" id="expense-amount" placeholder="0.00" class="w-full p-2 border border-[#AEC3B0] rounded-md bg-[#E3EED4]/10 focus:outline-none font-medium">
+                        <input type="number" id="expense-amount" placeholder="0.00" class="w-full p-2 text-base border border-[#AEC3B0] rounded-md bg-[#E3EED4]/10 focus:outline-none font-medium">
                     </div>
                     <div>
                         <label class="block text-slate-500 mb-1">👤 ใครเป็นคนออกเงินก่อน?</label>
@@ -88,20 +77,17 @@
                     <div>
                         <label class="block text-slate-500 mb-1">👥 คนร่วมหาร / ใส่จำนวนเงิน</label>
                         <div id="expense-sharers" class="space-y-1.5 p-2 border border-[#AEC3B0] rounded-md bg-[#E3EED4]/10 max-h-48 overflow-y-auto">
-                            <!-- รายชื่อสลับโหมดออโต้ตรงนี้ -->
-                        </div>
+                            </div>
                     </div>
                     <button id="btn-save-expense" class="w-full bg-[#375534] text-white p-2.5 rounded-lg hover:bg-[#0F2A1D] transition shadow-xs text-xs font-medium">บันทึกและคำนวณเงิน</button>
                 </div>
             </div>
 
-            <!-- บล็อกที่ 2: การ์ดสรุปยอดโอนรายบุคคล -->
             <div class="bg-white rounded-xl p-4 border border-[#AEC3B0]/20 lg:col-span-2 shadow-2xs flex flex-col justify-between">
                 <div>
                     <h2 class="text-xs font-medium text-[#375534] border-b border-[#AEC3B0]/10 pb-1 mb-2">📊 สรุปยอดโอนเงินรายบุคคล</h2>
                     <div id="net-summary-cards" class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                        <!-- การ์ดสรุปรายบุคคล -->
-                    </div>
+                        </div>
                 </div>
                 <div class="text-[11px] text-slate-400 mt-4 pt-2 border-t border-slate-100 italic">
                     * ในโหมดจ่ายตามจริง รินแค่กรอกยอดของแต่ละคน ระบบจะคำนวณยอดบิลรวมให้เองอัตโนมัติเลยน้า
@@ -109,13 +95,11 @@
             </div>
         </div>
 
-        <!-- โซนด้านล่างสุด -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
             <div class="bg-white rounded-xl p-4 border border-[#AEC3B0]/20 md:col-span-1 space-y-3 shadow-2xs">
                 <h2 class="text-xs font-medium text-[#375534] border-b border-[#AEC3B0]/10 pb-1">🔍 ตรวจสอบแยกตามบิลอิสระ</h2>
                 <div id="settlement-list" class="space-y-2.5 max-h-64 overflow-y-auto pr-1">
-                    <!-- รายการแยกบิล -->
-                </div>
+                    </div>
             </div>
             <div class="bg-white rounded-xl p-4 border border-[#AEC3B0]/20 md:col-span-2 space-y-3 shadow-2xs">
                 <h2 class="text-xs font-medium text-[#375534] border-b border-[#AEC3B0]/10 pb-1">🕒 ประวัติบิลทั้งหมดในทริป</h2>
@@ -126,7 +110,6 @@
         </div>
     </div>
 
-    <!-- 🔗 เรียกใช้ไฟล์สมองกลแยกส่วนจากด้านนอก -->
     <script type="module" src="app.js"></script>
 </body>
 </html>
