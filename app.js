@@ -14,6 +14,11 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// 🔍 --- ระบบอ่านรหัสทริปจาก URL (Trip ID) ---
+// ถ้าเปิดลิงก์ธรรมดาจะตั้งชื่อทริปว่า 'default' แต่ถ้าใส่ ?trip=rinchill จะดึงชื่อ 'rinchill' มาใช้ทันทีจ้า
+const urlParams = new URLSearchParams(window.location.search);
+const tripId = urlParams.get('trip') || 'default';
+
 let globalMembers = [];
 let globalExpenses = [];
 
@@ -35,18 +40,28 @@ const netSummaryCardsDiv = document.getElementById('net-summary-cards');
 const btnMasterReset = document.getElementById('btn-master-reset');
 const btnMasterResetMobile = document.getElementById('btn-master-reset-mobile');
 
+// แสดงชื่อทริปปัจจุบันบนหัวเว็บให้รู้ว่าอยู่ห้องไหน
+const headerSub = document.querySelector('p.text-slate-500');
+if (headerSub) {
+    headerSub.innerHTML = `📍 รหัสทริปปัจจุบัน: <span class="bg-[#375534] text-white px-2 py-0.5 rounded font-medium text-[10px]">${tripId}</span>`;
+}
+
 function getAvatarUrl(name) {
     return `https://api.dicebear.com/7.x/bottts-neutral/svg?seed=${encodeURIComponent(name)}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
 }
 
-onSnapshot(collection(db, "members"), (snapshot) => {
+// 🌐 เปลี่ยนตำแหน่งอ้างอิงบน Firebase ให้จมลึกลงไปตามรหัสทริปดั่งไอเดียวิธีที่ 1
+const membersRef = collection(db, "trips", tripId, "members");
+const expensesRef = collection(db, "trips", tripId, "expenses");
+
+onSnapshot(membersRef, (snapshot) => {
     globalMembers = [];
     snapshot.forEach(doc => globalMembers.push(doc.data().name));
     renderMemberUI();
     calculateMasterBalances(); 
 });
 
-const qExp = query(collection(db, "expenses"), orderBy("timestamp", "desc"));
+const qExp = query(expensesRef, orderBy("timestamp", "desc"));
 onSnapshot(qExp, (snapshot) => {
     globalExpenses = [];
     snapshot.forEach(docSnap => {
@@ -115,7 +130,7 @@ function renderMemberUI() {
             expenseSharersDiv.innerHTML += `
                 <div class="flex items-center justify-between gap-2 bg-white p-1.5 border border-[#AEC3B0]/30 rounded-md">
                     <span class="text-xs font-medium text-[#0F2A1D] min-w-16">${name} :</span>
-                    <input type="number" name="custom-amount" data-name="${name}" placeholder="0" class="w-20 p-1 border border-[#AEC3B0]/60 rounded text-right text-xs bg-[#E3EED4]/5">
+                    <input type="number" name="custom-amount" data-name="${name}" placeholder="0" class="w-24 p-1 border border-[#AEC3B0]/60 rounded text-right text-base bg-[#E3EED4]/5">
                 </div>
             `;
         }
@@ -162,7 +177,7 @@ btnAddMember.addEventListener('click', async () => {
     const name = memberNameInput.value.trim();
     if(name) {
         if(globalMembers.includes(name)) { alert('ชื่อนี้ซ้ำแล้วจ้าริน!'); return; }
-        await addDoc(collection(db, "members"), { name: name });
+        await addDoc(membersRef, { name: name });
         memberNameInput.value = '';
     }
 });
@@ -202,7 +217,7 @@ btnSaveExpense.addEventListener('click', async () => {
         if (Object.keys(sharerData).length === 0) { alert('กรุณากรอกยอดเงินค่ากินของเพื่อนๆ อย่างน้อย 1 คนจ้า!'); return; }
     }
 
-    await addDoc(collection(db, "expenses"), {
+    await addDoc(expensesRef, {
         title: title,
         amount: totalAmount,
         payer: payer,
@@ -223,16 +238,16 @@ btnSaveExpense.addEventListener('click', async () => {
 
 window.deleteBill = async (billId) => {
     if(confirm('ต้องการลบบิลนี้ใช่ไหมจ้าริน?')) {
-        await deleteDoc(doc(db, "expenses", billId));
+        await deleteDoc(doc(db, "trips", tripId, "expenses", billId));
     }
 };
 
 const masterResetFunction = async () => {
-    if (confirm('🚨 เริ่มทริปใหม่หมดใช่ไหมริน? ข้อมูลเดิมจะหายเกลี้ยงเลยนะ')) {
-        const expSnap = await getDocs(collection(db, "expenses"));
-        await Promise.all(expSnap.docs.map(d => deleteDoc(doc(db, "expenses", d.id))));
-        const memSnap = await getDocs(collection(db, "members"));
-        await Promise.all(memSnap.docs.map(d => deleteDoc(doc(db, "members", d.id))));
+    if (confirm(`🚨 เริ่มทริปใหม่หมดใช่ไหมริน? ข้อมูลของทริป "${tripId}" จะหายเกลี้ยงเลยนะ`)) {
+        const expSnap = await getDocs(expensesRef);
+        await Promise.all(expSnap.docs.map(d => deleteDoc(doc(db, "trips", tripId, "expenses", d.id))));
+        const memSnap = await getDocs(membersRef);
+        await Promise.all(memSnap.docs.map(d => deleteDoc(doc(db, "trips", tripId, "members", d.id))));
         alert('✨ เคลียร์คลาวด์เรียบร้อยแล้วริน!');
         window.location.reload();
     }
@@ -326,7 +341,6 @@ function calculateMasterBalances() {
         }
     }
 
-    /* 🎨 วาดการ์ดสรุปรายบุคคล (เวอร์ชันหักห้ามใจ ไม่เนียนขึ้นจุดพลุตอนเริ่มทริปแล้ว) */
     if (!hasAnyTransactions) {
         if (globalMembers.length === 0 || globalExpenses.length === 0) {
             netSummaryCardsDiv.innerHTML = '<p class="col-span-full text-center text-slate-400 italic py-4">กรุณาเพิ่มเพื่อนและบันทึกบิลเพื่อดูสรุปยอดโอนจ้า</p>';
